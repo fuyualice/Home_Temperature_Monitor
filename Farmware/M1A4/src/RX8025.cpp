@@ -38,12 +38,12 @@ void RX8025::read(DataTime* dt){
 void RX8025::write(DataTime* dt){
   Wire.beginTransmission(RX8025_ADDR);
   Wire.write(0x00);
-  Wire.write(dec2bcd(dt->second));
-  Wire.write(dec2bcd(dt->minute));
-  Wire.write(dec2bcd(dt->hour));
-  Wire.write(dec2bcd(dt->weekday));
-  Wire.write(dec2bcd(dt->day));
-  Wire.write(dec2bcd(dt->month));
+  Wire.write(dec2bcd(dt->second) & 0x7F);
+  Wire.write(dec2bcd(dt->minute) & 0x7F);
+  Wire.write(dec2bcd(dt->hour) & 0x3F);
+  Wire.write(dec2bcd(dt->weekday) & 0x07);
+  Wire.write(dec2bcd(dt->day) & 0x3F);
+  Wire.write(dec2bcd(dt->month) & 0x1F);
   Wire.write(dec2bcd(dt->year - 2000));
   Wire.endTransmission();
 

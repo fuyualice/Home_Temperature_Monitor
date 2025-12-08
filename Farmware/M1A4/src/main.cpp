@@ -23,6 +23,8 @@
 #define I2C_SDA 21
 #define I2C_SCL 22
 
+RTC_DATA_ATTR bool ntp_sync_today = false;
+
 RX8025 rtc;
 
 Adafruit_BME280 bme;
@@ -77,9 +79,8 @@ void sync_NTP(){
   dt.month = timeinfo.tm_mon + 1;
   dt.year = timeinfo.tm_year + 1900;
   dt.weekday = (timeinfo.tm_wday == 0) ? 7 : timeinfo.tm_wday;
-  rtc.write(&dt);
-
   Serial.printf("[NTP] %d/%d/%d %d:%d:%d (%d)\n", dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second, dt.weekday);
+  rtc.write(&dt);
 }
 
 bool upload_data_influxdb(BME280Data &bme280, DataTime &dt){
@@ -114,8 +115,12 @@ void routine(){
   rtc.set_alarm(&dt);
 
   if (WiFi.status() == WL_CONNECTED){
-    if (dt.hour == 0 && dt.minute == 0){
+    if (dt.hour == 0 && !ntp_sync_today){
       sync_NTP();
+      ntp_sync_today = true;
+    }
+    if (dt.hour != 0 && ntp_sync_today){
+      ntp_sync_today = false;
     }
     upload_data_influxdb(bme280, dt);
   }
@@ -147,26 +152,23 @@ void routine(){
   }
   while (display.nextPage());
   // display.hibernate();
-
 }
 
 void setup() {
+  delay(1000);
   Serial.begin(115200);
 
   Wire.begin(I2C_SDA, I2C_SCL);
-  pinMode(32, INPUT_PULLUP);
+  // pinMode(32, INPUT_PULLUP);
 
   if (!bme.begin(0x76)){
     Serial.println("[BME280] Could not find the BME280.");
   }
 
-  display.init(115200);
-  display.setRotation(0);
-  display.setFullWindow();
+  display.init(9600, true, 2, false);
+  display.setRotation(2);
   display.setFont(&FreeMono12pt7b);
   display.setTextColor(GxEPD_BLACK);
-  display.fillScreen(GxEPD_WHITE);
-  display.display(true);  // trueで全画面更新
 
   unsigned long start = millis();
   WiFi.begin(wifi_ssid, wifi_password);
