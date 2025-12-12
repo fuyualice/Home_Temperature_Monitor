@@ -112,7 +112,6 @@ void routine(){
   BME280Data bme280 = read_BME280(bme);
   DataTime dt;
   rtc.read(&dt);
-  rtc.set_alarm(&dt);
 
   if (WiFi.status() == WL_CONNECTED){
     if (dt.hour == 0 && !ntp_sync_today){
@@ -127,6 +126,9 @@ void routine(){
   else{
     Serial.println("[Network] Wi-Fi is not connected.");
   }
+
+  rtc.set_alarm(&dt);
+  rtc.init();
 
   char timeStr[32];
   snprintf(timeStr, sizeof(timeStr), "%04d/%02d/%02d %02d:%02d:%02d (%d)",
